@@ -5,6 +5,7 @@ from dateutil.tz import gettz
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from twilio.rest import Client
+import time
 
 # ---------- CONFIGURAÇÃO TWILIO ----------
 account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
@@ -70,41 +71,46 @@ def check_offline_sites():
 
     try:
         driver.get(MONITOR_URL)
-        print("⏳ Aguardando a página carregar...")
-        driver.implicitly_wait(60) # Espera implícita de até 15s
+        print("⏳ Aguardando a página carregar dinamicamente...")
+
+        # Espera dinâmica: enquanto houver status 'checking', aguarda
+        while True:
+            checking_elements = driver.find_elements(By.CSS_SELECTOR, "span.status.checking")
+            if not checking_elements:
+                break
+            print(f"⏳ Ainda verificando {len(checking_elements)} URLs...")
+            time.sleep(2)  # espera 2 segundos antes de checar novamente
+
+        print("✅ Todos os sites concluíram a verificação.")
 
         # Raspar tabela
         rows = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")
-        
         offline_sites = []
+
         # --- CORREÇÃO DO ERRO StaleElementReferenceException ---
-        # Percorre a lista de elementos usando um índice para evitar o erro.
         for i in range(len(rows)):
             try:
-                # O elemento é encontrado novamente a cada iteração para garantir que seja o mais atual.
                 row = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")[i]
-                
                 url_element = row.find_element(By.CSS_SELECTOR, "td a.url")
                 status_element = row.find_element(By.CSS_SELECTOR, "td span.status")
                 
                 url = url_element.text.strip()
-                status = status_element.text.strip().lower()
-
-                if "offline" in status and url not in cache[today]:
+                status = status_element.get_attribute("class")  # pegar a classe CSS
+                
+                if "offline" in status.lower() and url not in cache[today]:
                     offline_sites.append(url)
 
             except Exception as e:
-                print(f"⚠️ Aviso: Elemento 'stale', pulando para o próximo. Erro: {e}")
+                print(f"⚠️ Aviso: Elemento 'stale', pulando. Erro: {e}")
                 continue
-        # --- FIM DA CORREÇÃO ---
+        # --- FIM CORREÇÃO ---
+
         if not offline_sites:
             print("✅ Nenhum site offline novo hoje.")
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
-            
             offline_list = "\n".join(offline_sites)
             message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list}"
-            
             send_sms(message)
             cache[today].extend(offline_sites)
             save_cache(cache)
