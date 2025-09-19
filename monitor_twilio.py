@@ -77,30 +77,35 @@ def check_offline_sites():
         rows = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")
         
         offline_sites = []
-        for row in rows:
-            url_element = row.find_element(By.CSS_SELECTOR, "td a.url")
-            status_element = row.find_element(By.CSS_SELECTOR, "td span.status")
-            
-            url = url_element.text.strip()
-            status = status_element.text.strip().lower()
+        # --- CORREÇÃO DO ERRO StaleElementReferenceException ---
+        # Percorre a lista de elementos usando um índice para evitar o erro.
+        for i in range(len(rows)):
+            try:
+                # O elemento é encontrado novamente a cada iteração para garantir que seja o mais atual.
+                row = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")[i]
+                
+                url_element = row.find_element(By.CSS_SELECTOR, "td a.url")
+                status_element = row.find_element(By.CSS_SELECTOR, "td span.status")
+                
+                url = url_element.text.strip()
+                status = status_element.text.strip().lower()
 
-            if "offline" in status and url not in cache[today]:
-                offline_sites.append(url)
+                if "offline" in status and url not in cache[today]:
+                    offline_sites.append(url)
 
+            except Exception as e:
+                print(f"⚠️ Aviso: Elemento 'stale', pulando para o próximo. Erro: {e}")
+                continue
+        # --- FIM DA CORREÇÃO ---
         if not offline_sites:
             print("✅ Nenhum site offline novo hoje.")
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
             
-            # --- CORREÇÃO AQUI ---
-            # Primeiro, formatamos a lista de sites com quebras de linha
             offline_list = "\n".join(offline_sites)
-            # Em seguida, criamos a mensagem final usando a variável 'offline_list'
             message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list}"
-            # --- FIM DA CORREÇÃO ---
             
             send_sms(message)
-            # Atualiza cache
             cache[today].extend(offline_sites)
             save_cache(cache)
             
