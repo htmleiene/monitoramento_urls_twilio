@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from datetime import datetime
 from dateutil.tz import gettz
@@ -104,16 +105,20 @@ def check_offline_sites():
                 print(f"⚠️ Aviso: Elemento 'stale', pulando. Erro: {e}")
                 continue
         # --- FIM CORREÇÃO ---
-
         if not offline_sites:
             print("✅ Nenhum site offline novo hoje.")
+            message = f"✅ Todos os sites monitorados estão online em {now_formatted()}."
+            send_sms(message)
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
             offline_list = "\n".join(offline_sites)
-            message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list}"
+            # Limpa caracteres não ASCII para evitar símbolos estranhos no SMS
+            offline_list_clean = re.sub(r'[^\x00-\x7F]+','', offline_list)
+            message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list_clean}"
             send_sms(message)
             cache[today].extend(offline_sites)
             save_cache(cache)
+
             
     except Exception as e:
         print(f"❌ Erro durante a verificação: {e}")
