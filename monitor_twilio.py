@@ -91,8 +91,14 @@ def check_offline_sites():
             print("✅ Nenhum site offline novo hoje.")
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
-            message = (f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n"
-                       f"{'\n'.join(offline_sites)}")
+            
+            # --- CORREÇÃO AQUI ---
+            # O erro estava na f-string. A forma correta é formatar a lista
+            # e depois inseri-la na mensagem.
+            offline_list = "\n".join(offline_sites)
+            message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list}"
+            # --- FIM DA CORREÇÃO ---
+            
             send_sms(message)
             # Atualiza cache
             cache[today].extend(offline_sites)
