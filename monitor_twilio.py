@@ -71,7 +71,7 @@ def check_offline_sites():
     try:
         driver.get(MONITOR_URL)
         print("⏳ Aguardando a página carregar...")
-        driver.implicitly_wait(15) # Espera implícita de até 15s
+        driver.implicitly_wait(60) # Espera implícita de até 15s
 
         # Raspar tabela
         rows = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")
