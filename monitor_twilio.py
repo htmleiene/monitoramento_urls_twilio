@@ -93,9 +93,9 @@ def check_offline_sites():
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
             
             # --- CORREÇÃO AQUI ---
-            # O erro estava na f-string. A forma correta é formatar a lista
-            # e depois inseri-la na mensagem.
+            # Primeiro, formatamos a lista de sites com quebras de linha
             offline_list = "\n".join(offline_sites)
+            # Em seguida, criamos a mensagem final usando a variável 'offline_list'
             message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list}"
             # --- FIM DA CORREÇÃO ---
             
