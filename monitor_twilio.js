@@ -3,7 +3,8 @@ import puppeteer from "puppeteer";
 import twilio from "twilio";
 import fs from "fs";
 import path from "path";
-import { format, utcToZonedTime } from "date-fns-tz";
+import { format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 // ---------- CONFIGURAÇÃO TWILIO ----------
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -118,3 +119,4 @@ async function checkOfflineSites() {
     await new Promise(r => setTimeout(r, CHECK_INTERVAL_MS));
   }
 })();
+
