@@ -1,14 +1,18 @@
 {
-  "name": "monitor-sms",
+  "name": "monitoramento_urls_twilio",
   "version": "1.0.0",
-  "description": "Monitoramento contínuo de URLs com alerta via Twilio",
-  "main": "monitor_twilio.js",
+  "description": "Monitoramento de URLs com Twilio e Puppeteer",
   "type": "module",
+  "main": "monitor_twilio.js",
   "scripts": {
     "start": "node monitor_twilio.js"
   },
+  "author": "Leiene Neves",
+  "license": "MIT",
   "dependencies": {
-    "puppeteer": "^23.3.2",
-    "twilio": "^4.14.1"
+    "puppeteer": "^25.7.0",
+    "twilio": "^4.15.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.2.0"
   }
 }
