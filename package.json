@@ -1,0 +1,14 @@
+{
+  "name": "monitor-sms",
+  "version": "1.0.0",
+  "description": "Monitoramento contínuo de URLs com alerta via Twilio",
+  "main": "monitor_twilio.js",
+  "type": "module",
+  "scripts": {
+    "start": "node monitor_twilio.js"
+  },
+  "dependencies": {
+    "puppeteer": "^23.3.2",
+    "twilio": "^4.14.1"
+  }
+}

@@ -1,0 +1,3 @@
+node_modules/
+offline_cache.json
+.env
