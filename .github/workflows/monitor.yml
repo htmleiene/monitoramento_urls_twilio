@@ -1,0 +1,30 @@
+name: Monitoramento URLs
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # executa a cada 5 minutos
+  workflow_dispatch: # permite rodar manualmente
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    environment: TWILIO_ACCOUNT_SID   # vincula ao environment com os secrets
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run monitor_twilio.js
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_PHONE: ${{ secrets.TWILIO_PHONE }}
+          MY_PHONE: ${{ secrets.MY_PHONE }}
+        run: node monitor_twilio.js
