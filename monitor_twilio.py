@@ -62,7 +62,7 @@ def check_offline_sites():
     cache = read_cache()
     today = datetime.now(gettz(TIMEZONE)).strftime("%d-%m-%Y")
     if today not in cache:
-        cache[today] = []
+        cache[today] = {"offline": [], "sent_ok": False}
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
@@ -74,13 +74,13 @@ def check_offline_sites():
         driver.get(MONITOR_URL)
         print("⏳ Aguardando a página carregar dinamicamente...")
 
-        # Espera dinâmica: enquanto houver status 'checking', aguarda
+        # Espera até terminar de verificar
         while True:
             checking_elements = driver.find_elements(By.CSS_SELECTOR, "span.status.checking")
             if not checking_elements:
                 break
             print(f"⏳ Ainda verificando {len(checking_elements)} URLs...")
-            time.sleep(2)  # espera 2 segundos antes de checar novamente
+            time.sleep(2)
 
         print("✅ Todos os sites concluíram a verificação.")
 
@@ -88,38 +88,39 @@ def check_offline_sites():
         rows = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")
         offline_sites = []
 
-        # --- CORREÇÃO DO ERRO StaleElementReferenceException ---
         for i in range(len(rows)):
             try:
                 row = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")[i]
                 url_element = row.find_element(By.CSS_SELECTOR, "td a.url")
                 status_element = row.find_element(By.CSS_SELECTOR, "td span.status")
-                
+
                 url = url_element.text.strip()
-                status = status_element.get_attribute("class")  # pegar a classe CSS
-                
-                if "offline" in status.lower() and url not in cache[today]:
+                status = status_element.get_attribute("class")
+
+                if "offline" in status.lower() and url not in cache[today]["offline"]:
                     offline_sites.append(url)
 
             except Exception as e:
                 print(f"⚠️ Aviso: Elemento 'stale', pulando. Erro: {e}")
                 continue
-        # --- FIM CORREÇÃO ---
+
         if not offline_sites:
             print("✅ Nenhum site offline novo hoje.")
-            message = f"✅ Todos os sites monitorados estão online em {now_formatted()}."
-            send_sms(message)
+            # Só envia 1x por dia quando tudo está ok
+            if not cache[today]["sent_ok"]:
+                message = f"✅ Todos os sites monitorados estão online em {now_formatted()}."
+                send_sms(message)
+                cache[today]["sent_ok"] = True
+                save_cache(cache)
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
             offline_list = "\n".join(offline_sites)
-            # Limpa caracteres não ASCII para evitar símbolos estranhos no SMS
             offline_list_clean = re.sub(r'[^\x00-\x7F]+','', offline_list)
             message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list_clean}"
             send_sms(message)
-            cache[today].extend(offline_sites)
+            cache[today]["offline"].extend(offline_sites)
             save_cache(cache)
 
-            
     except Exception as e:
         print(f"❌ Erro durante a verificação: {e}")
     finally:
