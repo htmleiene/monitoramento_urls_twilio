@@ -19,9 +19,9 @@ to_number   = os.environ.get("MY_PHONE")
 MONITOR_URL = "https://htmleiene.github.io/monitoramento_urls/"
 TIMEZONE = "America/Sao_Paulo"
 CACHE_FILE = "offline_cache.json"
+DEBUG = True   # coloque False para não imprimir debug
 
 # ---------- FUNÇÕES AUXILIARES ----------
-
 def now_formatted():
     """Formata data/hora em DD-MM-YYYY HH:mm:ss (São Paulo)"""
     tz = gettz(TIMEZONE)
@@ -56,7 +56,6 @@ def send_sms(message):
         print(f"❌ Falha ao enviar SMS: {e}")
 
 # ---------- FUNÇÃO PRINCIPAL ----------
-
 def check_offline_sites():
     print(f"\n🟢 Iniciando verificação em {now_formatted()}")
     cache = read_cache()
@@ -80,7 +79,7 @@ def check_offline_sites():
             if not checking_elements:
                 break
             print(f"⏳ Ainda verificando {len(checking_elements)} URLs...")
-            time.sleep(2)  # espera 2 segundos antes de checar novamente
+            time.sleep(2)
 
         print("✅ Todos os sites concluíram a verificação.")
 
@@ -88,7 +87,6 @@ def check_offline_sites():
         rows = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")
         offline_sites = []
 
-        # --- CORREÇÃO DO ERRO StaleElementReferenceException ---
         for i in range(len(rows)):
             try:
                 row = driver.find_elements(By.CSS_SELECTOR, "#tabelaUrls tbody tr")[i]
@@ -96,15 +94,19 @@ def check_offline_sites():
                 status_element = row.find_element(By.CSS_SELECTOR, "td span.status")
                 
                 url = url_element.text.strip()
-                status = status_element.get_attribute("class")  # pegar a classe CSS
-                
-                if "offline" in status.lower() and url not in cache[today]:
+                status_text = status_element.text.strip().lower()
+                status_class = status_element.get_attribute("class").lower()
+
+                if DEBUG:
+                    print(f"DEBUG -> URL: {url}, Texto: '{status_text}', Classe: '{status_class}'")
+
+                if ("offline" in status_text or "offline" in status_class) and url not in cache[today]:
                     offline_sites.append(url)
 
             except Exception as e:
                 print(f"⚠️ Aviso: Elemento 'stale', pulando. Erro: {e}")
                 continue
-        # --- FIM CORREÇÃO ---
+
         if not offline_sites:
             print("✅ Nenhum site offline novo hoje.")
             message = f"✅ Todos os sites monitorados estão online em {now_formatted()}."
@@ -112,14 +114,12 @@ def check_offline_sites():
         else:
             print(f"🚨 Sites offline detectados: {', '.join(offline_sites)}")
             offline_list = "\n".join(offline_sites)
-            # Limpa caracteres não ASCII para evitar símbolos estranhos no SMS
             offline_list_clean = re.sub(r'[^\x00-\x7F]+','', offline_list)
             message = f"🚨 ALERTA - {len(offline_sites)} site(s) offline em {now_formatted()}:\n{offline_list_clean}"
             send_sms(message)
             cache[today].extend(offline_sites)
             save_cache(cache)
 
-            
     except Exception as e:
         print(f"❌ Erro durante a verificação: {e}")
     finally:
